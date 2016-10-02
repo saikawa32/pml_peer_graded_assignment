@@ -34,7 +34,7 @@ library(randomForest)
 library(mlbench)
 ```
 
-```{r set num of cores, include=FALSE}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 library(doMC)
 registerDoMC(cores = 8)
 set.seed(12345)
@@ -43,7 +43,7 @@ set.seed(12345)
 
 ### Load data
 
-```{r load data}
+```{r}
 training = read.csv("../peer-assignment/pml-training.csv")
 testing= read.csv("../peer-assignment/pml-testing.csv")
 ```
@@ -52,7 +52,7 @@ testing= read.csv("../peer-assignment/pml-testing.csv")
 
 #### Create training and testing dataset 
 I used 70% data for model training and 30% data for validation.
-```{r data cleaning}
+```{r, data cleaning, echo=TRUE}
 inTrain  <- createDataPartition(training$classe, p=0.7, list=FALSE)
 TrainSet <- training[inTrain, ]
 TestSet  <- training[-inTrain, ]
@@ -61,7 +61,7 @@ dim(TestSet)
 ```
 
 #### Remove feature which variance is neer 0.
-```{r Remove feature which variance is neer 0}
+```{r, echo=TRUE}
 remove_idx <- nearZeroVar(TrainSet)
 TrainSet <- TrainSet[, -remove_idx]
 TestSet  <- TestSet[, -remove_idx]
@@ -70,7 +70,7 @@ dim(TestSet)
 ```
 
 #### Remove feature which contains too many NA.
-```{r}
+```{r, echo=TRUE}
 remove_idx <- sapply(TrainSet, function(x) mean(is.na(x))) > 0.95
 TrainSet <- TrainSet[, remove_idx==FALSE]
 TestSet <- TestSet[, remove_idx==FALSE]
@@ -79,7 +79,7 @@ dim(TestSet)
 ```
 
 #### Remove feature which are inccorect to use for prediction.
-```{r}
+```{r, echo=TRUE}
 TrainSet <- TrainSet[, -(1:5)]
 TestSet  <- TestSet[, -(1:5)]
 
@@ -97,7 +97,7 @@ TrainSet <- TrainSet[trainidx, ]
 ```
 
 ### Feature selection
-```{r feature selection}
+```{r}
 set.seed(12345)
 # define the control using a random forest selection function
 control <- rfeControl(functions=rfFuncs, method="cv", number=3)
@@ -106,17 +106,17 @@ results <- rfe(TrainSet[,1:data_dim[2]-1], TrainSet[,data_dim[2]], sizes=c(1:dat
 ```
 
 #### summarize the results
-```{r}
+```{r, echo=TRUE}
 print(results)
 ```
 
 #### list the chosen features
-```{r}
+```{r, echo=TRUE}
 predictors(results)
 ```
 
 #### plot the result
-```{r}
+```{r, echo=TRUE}
 plot(results, type=c("g", "o"))
 ```
 
@@ -128,7 +128,7 @@ TrainSet <- train_bak
 ```
 
 ### model fitting by random forest
-```{r model fitting}
+```{r, echo=TRUE}
 set.seed(12345)
 control_rf <- trainControl(method="cv", number=3, verboseIter=T)
 mod_rf <- train(classe ~ ., data=TrainSet, method="rf", trControl=control_rf)
@@ -136,14 +136,14 @@ mod_rf$finalModel
 ```
 
 #### prediction on Test dataset and performance evaluation
-```{r}
+```{r, echo=TRUE}
 pred_rf <- predict(mod_rf, newdata=TestSet)
 confmat_rf <- confusionMatrix(pred_rf, TestSet$classe)
 confmat_rf
 ```
 
 ### model fitting by random forest for feature selected data
-```{r model fitting with rfe}
+```{r, echo=TRUE}
 set.seed(12345)
 
 data_rfe <- TrainSet[results$optVariables]
@@ -154,7 +154,7 @@ mod_rf_rfe$finalModel
 ```
 
 #### prediction on Test dataset and performance evaluation
-```{r}
+```{r, echo=TRUE}
 pred_rf_rfe <- predict(mod_rf_rfe, newdata=TestSet)
 confmat_rf_rfe <- confusionMatrix(pred_rf_rfe, TestSet$classe)
 confmat_rf_rfe
@@ -163,7 +163,7 @@ confmat_rf_rfe
 Accuracy of feature selected by recursive feature elimination are higher than no feature selected.
 
 ## Prediction of test data
-```{r}
+```{r, echo=TRUE}
 pred_rf_rfe_test <- predict(mod_rf_rfe, newdata=testing)
 pred_rf_rfe_test
 ```
